@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<?php
+$servername = "localhost";
+$username = "test";
+$password = "0000";
+$dbname = "practice";
+
+$sector = $_GET['sector'];
+$conn =  mysqli_connect($servername, $username, $password, $dbname);
+if($conn->connect_error){
+	die("Connection failed: " . $conn->connect_error);
+}
+$dateString = date("Y-m-d", time());
+$sql = "INSERT INTO sectorData1 (logdate, sector) VALUES ('$dateString', '$sector')";
+$result = mysqli_query($conn, $sql);
+if(!result){
+	die('Invalid query : ' . mysql_error());
+}
+mysqli_close($conn);
+?>
+
+</body>
+</html>
