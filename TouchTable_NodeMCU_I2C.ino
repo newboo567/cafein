@@ -114,7 +114,7 @@ void table() {
   }
   delay(1000);
 }
-
+///////////////////////////////////////////////////////////////////////////////////
 void chair() {
   int arr[3];
   int chair;  //의자 좌석번호
@@ -123,7 +123,7 @@ void chair() {
   int i = 0;
   while (Wire.available()) { // slave may send less than requested
     arr[i] = (int)Wire.read(); // receive a byte as character
-    Serial.print("Got Cha!!  ");
+    Serial.print("who is seated.  ");
     i++;
   }
   if (arr[0] >= 100) {
@@ -142,11 +142,11 @@ void chair() {
   delay(1000);
 }
 
-///////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
 
 void sendTableRequest(int * arr, int menuSize) {
   int count;
-  Serial.println("I'm comming!!");
+  Serial.println("table function");
 
   strcpy(streamId, "receivedata.php");
   Serial.print("connecting to ");
@@ -258,6 +258,8 @@ void sendChairRequest(int chair, int isSeat) {
 
 ///////////////////////////////////////////////////////////////////////////////////////
 ////I2C통신으로 주문이 완료된 경우 보드에게 전송한다.
+
+int receiveOrderSig = 0;
 void SendOrderReadySignal() {
   int table;
   // Check if connected
@@ -268,16 +270,23 @@ void SendOrderReadySignal() {
   //Read the first line of the req.
   String req = client.readStringUntil('\r');
   Serial.println(req);
+  receiveOrderSig++;
   client.flush();
 
   if (req.indexOf("/led/7") != -1)
     table = 7;
 
   if (table == 7) {
-    Wire.beginTransmission(8); // transmit to device #8
-    Wire.write((byte)table);              // sends one byte
-    Wire.endTransmission();    // stop transmitting
-    Serial.println("Send Data!");
+    if(receiveOrderSig == 1){
+      Wire.beginTransmission(8); // transmit to device #8
+      Wire.write((byte)table);              // sends one byte
+      Wire.endTransmission();    // stop transmitting
+      Serial.println("Order ready signal is send!");
+    }
+  }
+  
+  if(receiveOrderSig >= 3){
+    receiveOrderSig = 0;
   }
 }
 
