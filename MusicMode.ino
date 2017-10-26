@@ -3,8 +3,7 @@ void MusicMode() {
   boolean isLyric;
   //이 함수내에서 dir = music, path = /basic/music 고정
   if (isFirstTime) {
-    SetDirName("music");    //디렉토리 설정
-    ChangeDir(dirName, ADD);  //path 변화
+    ChangeDir("music", ADD);  //path 변화
   }
   else//리플레이 할 경우 이걸 통과 시킬지 결정해봐라
     isFirstTime = true; //한번 음악을 들었을 경우 안내음성을 출력해주게 하기 위해서이다.
@@ -16,13 +15,11 @@ void MusicMode() {
   if (ISMANUALBUT) //메뉴얼 관련 섹터(다시듣기, 홈버튼, 취소버튼)
     OperateManualBut();
   else if (sector % 5 == 0) {
-    subMode = (sector / 5) + 3;
-    currentMode = subMode;
+    currentMode = (sector / 5) + 3; //5, 6, 7 중 하나
     PlayGuideTrack(SELECT);
 
     //가사가 있는 음악 or 가사가 없는 음악??
-    SetFileName("lyricGui.mp3");  //파일 설정
-    OpenFileAndPlaySound(false);     //음성출력 -> 가사 있는 거 없는 거 선택
+    OpenFileAndPlaySound("lyricGui.mp3", true);
     do {
       FindSector();  //*핀 입력값 찾기*//
     } while (sector == -1);
@@ -45,18 +42,17 @@ void PlayMusic(boolean isLyric) { //음악 한 트랙을 연속으로 듣게 한
   int * trackList;  //가사 있는 혹은 가사 없는 트랙을 저장할 공간
   int trackNum, start;
   //처음으로 들어온 경우 진행할 수 있게 해야할 듯??
-  SetDirName("musicLst");  //디렉토리 설정
-  ChangeDir(dirName, ADD);  //path 변화(ADD)
+  ChangeDir("musicLst", ADD);  //path 변화(ADD)
   sd.chdir(path, O_READ); // -> 현재 /basic/music/musicList에 있음
 
   //테마에 따라 값을 달리 지정   --> 쌔끈하게 바꿀 수 있다면 그렇게 할 것
-  if (subMode == MUSIC_SADMODE) {
+  if (currentMode == MUSIC_SADMODE) {
     noLyric = 110; lyric = 113; total = 7;
   }
-  else if (subMode == MUSIC_CHEERMODE) {
+  else if (currentMode == MUSIC_CHEERMODE) {
     noLyric = 120; lyric = 123; total = 7;
   }
-  else if (subMode == MUSIC_CALMMODE) {
+  else if (currentMode == MUSIC_CALMMODE) {
     noLyric = 130; lyric = 133; total = 6;
   }
 
@@ -74,28 +70,30 @@ void PlayMusic(boolean isLyric) { //음악 한 트랙을 연속으로 듣게 한
   }
   //랜덤 트랙을 만든다.
   MakeRanTrack(trackList, trackNum);
-  
-  
+
+
   //트랙 실행
   if (PlayMusicTrack(trackList, trackNum)) {//중도에 그만두지 않았다면(true 반환)
-    
     //음악모드로 돌아가서 음성을 틀기 위해 디렉토리를 지운다.
-    ChangeDir(dirName, DEL);  //path 변화(DEL)
+    ChangeDir("music", BACK);  //path 변화(music으로 BACK)
   }
   free(trackList);
 }
 
 bool PlayMusicTrack(int * track, int trackNum) {
   char numbuf[4];
+  char * trackName;
+
   for (int i = 0; i < trackNum; i++) {
-   
+
     isMusPlay = true; //음악재생 동안은 컵소리 방해 없음
     //파일이름 설정
-    mkNameAndSetFile("TRACK", track[i], numbuf);
-    OpenFileAndPlaySound(false); //음악재생
+    trackName = mkNameAndSetFile("TRACK", track[i], numbuf);
+    OpenFileAndPlaySound(trackName, true);
+    free(trackName);
     //플레이 시작
     while (MP3player.isPlaying()) {
-      //Serial.println(i);
+      Serial.println("Music is Playing...");
       FindSector();  //*핀 입력값 찾기*//
       if (ISMANUALBUT) { //메뉴얼 관련 섹터(홈버튼, 취소버튼, 전원버튼)
         isMusPlay = false;
@@ -124,7 +122,7 @@ bool PlayMusicTrack(int * track, int trackNum) {
         }
       }
     }//while end
-    
+
     isMusPlay = false;
     delay(500);
   }//for문 end

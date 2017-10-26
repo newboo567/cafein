@@ -12,8 +12,7 @@ void BACGame() {
   //숫자야구 모드 -> dirName = bac, path = /basic/game/bac  ->>  고정
 
   if (isFirstTime) {
-    SetDirName("bac");    //디렉토리 설정
-    ChangeDir(dirName, ADD);  //path 변화
+    ChangeDir("bac", ADD);  //path 변화
   }
   else
     isFirstTime = true;//한번 음성을 들었을 경우 안내음성을 출력해주게 하기 위해서이다.
@@ -32,38 +31,20 @@ void BACGame() {
   int * list = (int *)malloc(sizeof(int) * 10); //0~9까지 숫자 저장하는 배열 동적할당
   for (int i = 0; i < 10; i++)
     list[i] = i;
-  //Serial.print("list : ");
-  // for (int i = 0; i < 10; i++) {
-  //   Serial.print(list[i]);
-  //   Serial.print(" ");
-  // }
-  // Serial.println();
   MakeRanTrack(list, 10);  //배열을 랜덤으로 배치. 함수 호출할 때 마다 달라진다.
   for (int i = 0; i < 3; i++)
     ansNum[i] = list[9 - i];
-  /*
-    //test용
-    Serial.print("list : ");
-    for (int i = 0; i < 10; i++) {
-      Serial.print(list[i]);
-      Serial.print(" ");
-    }
-    Serial.println();
-    //테스트
-    Serial.print("ansNum = ");
-    for (int x = 0; x < 3; x++) {
-      Serial.print(ansNum[x]);
-    }
-    Serial.println();
-  */
+  
   //시작합니다 음성
-  SetFileName("start.mp3");
-  OpenFileAndPlaySound(false);
+  //SetFileName("start.mp3");
+  //OpenFileAndPlaySound(false);
+  OpenFileAndPlaySound("start.mp3", false);
 
   while (count != 0) {
     int i = 0;
-    SetFileName("slt3num.mp3"); //음성 : 연속으로 3개의 수를 터치하십시오.
-    OpenFileAndPlaySound(false);
+    //SetFileName("slt3num.mp3"); //음성 : 연속으로 3개의 수를 터치하십시오.
+    //OpenFileAndPlaySound(false);
+    OpenFileAndPlaySound("slt3num.mp3", false);
     while (i < 3) {
       do {
         FindSector(); //*사용자의 입력값을 찾는다.*//
@@ -77,22 +58,14 @@ void BACGame() {
         i++;
       }
     }
-    /*
-      //테스트
-      Serial.print("userNum = ");
-      for (int x = 0; x < 3; x++) {
-        Serial.print(playerNum[x]);
-      }
-      Serial.println();*/
     ////*판별
     BACGame_isCorrect = CompareAnsAndPlayer(ansNum, playerNum);
 
     if (BACGame_isCorrect && count > 0) {
       //음성 : 축하합니다! 열번 안에 맞추셨습니다! 랜덤으로 음료를 드립니다.
-      //congratu + gvRanone 파일 하나 (gift)로 통합한다.
-      SetFileName("gift.mp3");
-      OpenFileAndPlaySound(false);
-      //GameEvent();  //게임이벤트 진행
+      OpenFileAndPlaySound("gift.mp3", false);
+      isEvent = true;
+      SendList(); //이벤트 음료
       break;
     }
     else
@@ -101,16 +74,15 @@ void BACGame() {
 
 
   //gameOver + cheerUp 파일 하나 (gmOver)로 통합한다.
-  if (count == 0) { //
-    SetFileName("gmOver.mp3");
-    OpenFileAndPlaySound(false);
+  if (count == 0) { 
+    OpenFileAndPlaySound("gmOver.mp3", false);
   }
 
   //숫자야구 끝
 
   //path 바꾸자.
-  ChangeDir(dirName, DEL);  //게임모드로 바뀐다.
-
+  //ChangeDir(dirName, BACK);  //게임모드로 바뀐다.
+  ChangeDir("game", BACK);  //게임모드로 바뀐다.
   free(list);
   delay(1500);
 }
@@ -129,6 +101,7 @@ void ReadPlayerInput(int * arr, int index) {
 /////////////////////////정답과 사용자의 답을 비교판정//////////////////////////
 boolean CompareAnsAndPlayer(int * ans, int * player) {
   char numbuf[3]; //스트라이크수와 볼의 수를 이어붙여서 만듬
+  char * result; //결과를 알려줄 파일
   int strike = 0, ball = 0;
   int i, j;
   boolean isRight = false;
@@ -151,7 +124,8 @@ boolean CompareAnsAndPlayer(int * ans, int * player) {
     isRight = true;
   //*결과에 대한 음성을 여기서 출력해준다.*//
   ////*결과를 바탕으로 track 번호 지정
-  mkNameAndSetFile("bacR", strike * 10 + ball, numbuf);
-  OpenFileAndPlaySound(false); //음악재생
+  result = mkNameAndSetFile("bacR", strike * 10 + ball, numbuf);  //결과를 재생해줄 파일이름 생성
+  OpenFileAndPlaySound(result, false);
+  free(result);
   return isRight;
 }
